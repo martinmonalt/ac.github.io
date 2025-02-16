@@ -1,0 +1,309 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
+import { Dumbbell, Salad, Moon } from 'lucide-react';
+
+const HealthApp = () => {
+  const [step, setStep] = useState(1);
+  const [userData, setUserData] = useState({
+    edad: '',
+    peso: '',
+    altura: '',
+    genero: '',
+    nivelActividad: '',
+    deporte: '',
+    objetivo: '',
+    horasSueno: '',
+    restriccionesAlimentarias: ''
+  });
+  const [recommendations, setRecommendations] = useState(null);
+
+  const calcularIMC = () => {
+    const alturaMetros = userData.altura / 100;
+    return (userData.peso / (alturaMetros * alturaMetros)).toFixed(1);
+  };
+
+  const calcularCaloriasBase = () => {
+    let TMB;
+    if (userData.genero === 'masculino') {
+      TMB = 10 * userData.peso + 6.25 * userData.altura - 5 * userData.edad + 5;
+    } else {
+      TMB = 10 * userData.peso + 6.25 * userData.altura - 5 * userData.edad - 161;
+    }
+    
+    const nivelActividadMultiplicador = {
+      sedentario: 1.2,
+      ligero: 1.375,
+      moderado: 1.55,
+      activo: 1.725,
+      muyActivo: 1.9
+    };
+
+    return Math.round(TMB * nivelActividadMultiplicador[userData.nivelActividad]);
+  };
+
+  const generarRecomendaciones = () => {
+    const imc = calcularIMC();
+    const caloriasBase = calcularCaloriasBase();
+    let caloriasDiarias = caloriasBase;
+    
+    // Ajuste de calorías según objetivo
+    if (userData.objetivo === 'perderGrasa') {
+      if (parseInt(userData.edad) < 18) {
+        caloriasDiarias = caloriasBase - 100; // Déficit mínimo para menores
+      } else {
+        caloriasDiarias = caloriasBase - 500;
+      }
+    } else if (userData.objetivo === 'ganarMusculo') {
+      caloriasDiarias = caloriasBase + 300;
+    }
+
+    const recomendacionesEjercicios = {
+      perderGrasa: [
+        'Cardio HIIT: 20-30 minutos, 3 veces por semana',
+        'Entrenamiento de fuerza: 45 minutos, 3-4 veces por semana',
+        'Ejercicios compuestos: sentadillas, peso muerto, press banca'
+      ],
+      ganarMusculo: [
+        'Entrenamiento de fuerza: 60 minutos, 4-5 veces por semana',
+        'Cardio moderado: 20 minutos, 2 veces por semana',
+        'Enfoque en ejercicios compuestos con peso progresivo'
+      ],
+      mantener: [
+        'Combinación de cardio y fuerza: 45 minutos, 3-4 veces por semana',
+        'Actividades recreativas: 30 minutos diarios',
+        'Ejercicios de movilidad y flexibilidad'
+      ]
+    };
+
+    const recetasPersonalizadas = {
+      perderGrasa: [
+        'Desayuno: Avena con proteína y frutas rojas',
+        'Almuerzo: Pechuga de pollo a la plancha con ensalada mixta',
+        'Cena: Pescado al horno con vegetales asados'
+      ],
+      ganarMusculo: [
+        'Desayuno: Tortilla de claras con avena y plátano',
+        'Almuerzo: Arroz integral con carne magra y verduras',
+        'Cena: Salmón con batata y brócoli'
+      ],
+      mantener: [
+        'Desayuno: Tostadas integrales con huevo y aguacate',
+        'Almuerzo: Bowl de quinoa con proteína y vegetales',
+        'Cena: Wrap de pavo con verduras'
+      ]
+    };
+
+    return {
+      caloriasDiarias,
+      imc,
+      horasSueno: parseInt(userData.edad) < 18 ? '8-10 horas' : '7-9 horas',
+      ejercicios: recomendacionesEjercicios[userData.objetivo],
+      recetas: recetasPersonalizadas[userData.objetivo],
+      suplementacion: userData.objetivo === 'ganarMusculo' ? 
+        ['Proteína whey', 'Creatina monohidratada', 'BCAAs'] :
+        ['Proteína whey', 'Multivitamínico']
+    };
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const recomendaciones = generarRecomendaciones();
+    setRecommendations(recomendaciones);
+    setStep(2);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-4xl mx-auto">
+        {step === 1 ? (
+          <Card className="bg-white shadow-lg border-green-500 border-t-4">
+            <CardHeader>
+              <CardTitle className="text-2xl text-center text-green-700">
+                Plan Personalizado de Salud y Fitness
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edad">Edad</Label>
+                    <Input
+                      required
+                      type="number"
+                      id="edad"
+                      value={userData.edad}
+                      onChange={(e) => setUserData({...userData, edad: e.target.value})}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="peso">Peso (kg)</Label>
+                    <Input
+                      required
+                      type="number"
+                      id="peso"
+                      value={userData.peso}
+                      onChange={(e) => setUserData({...userData, peso: e.target.value})}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="altura">Altura (cm)</Label>
+                    <Input
+                      required
+                      type="number"
+                      id="altura"
+                      value={userData.altura}
+                      onChange={(e) => setUserData({...userData, altura: e.target.value})}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="genero">Género</Label>
+                    <select
+                      required
+                      id="genero"
+                      value={userData.genero}
+                      onChange={(e) => setUserData({...userData, genero: e.target.value})}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="masculino">Masculino</option>
+                      <option value="femenino">Femenino</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="nivelActividad">Nivel de Actividad</Label>
+                    <select
+                      required
+                      id="nivelActividad"
+                      value={userData.nivelActividad}
+                      onChange={(e) => setUserData({...userData, nivelActividad: e.target.value})}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="sedentario">Sedentario</option>
+                      <option value="ligero">Ligero</option>
+                      <option value="moderado">Moderado</option>
+                      <option value="activo">Activo</option>
+                      <option value="muyActivo">Muy Activo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="deporte">Deporte que practicas</Label>
+                    <Input
+                      required
+                      id="deporte"
+                      value={userData.deporte}
+                      onChange={(e) => setUserData({...userData, deporte: e.target.value})}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="objetivo">Objetivo Principal</Label>
+                    <select
+                      required
+                      id="objetivo"
+                      value={userData.objetivo}
+                      onChange={(e) => setUserData({...userData, objetivo: e.target.value})}
+                      className="w-full p-2 border rounded"
+                    >
+                      <option value="">Seleccionar</option>
+                      <option value="perderGrasa">Perder Grasa</option>
+                      <option value="ganarMusculo">Ganar Músculo</option>
+                      <option value="mantener">Mantener</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label htmlFor="restricciones">Restricciones Alimentarias</Label>
+                    <Input
+                      id="restricciones"
+                      value={userData.restriccionesAlimentarias}
+                      onChange={(e) => setUserData({...userData, restriccionesAlimentarias: e.target.value})}
+                      className="w-full"
+                      placeholder="Opcional"
+                    />
+                  </div>
+                </div>
+                <Button 
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Generar Plan Personalizado
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            <Card className="bg-white shadow-lg border-green-500 border-t-4">
+              <CardHeader>
+                <CardTitle className="text-2xl text-center text-green-700">
+                  Tu Plan Personalizado
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-green-600">
+                      <Dumbbell className="w-6 h-6" />
+                      <h3 className="font-semibold">Plan de Entrenamiento</h3>
+                    </div>
+                    <ul className="list-disc pl-5 space-y-2">
+                      {recommendations.ejercicios.map((ejercicio, index) => (
+                        <li key={index} className="text-gray-700">{ejercicio}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-green-600">
+                      <Salad className="w-6 h-6" />
+                      <h3 className="font-semibold">Plan Nutricional</h3>
+                    </div>
+                    <p className="font-medium">Calorías diarias: {recommendations.caloriasDiarias}</p>
+                    <ul className="list-disc pl-5 space-y-2">
+                      {recommendations.recetas.map((receta, index) => (
+                        <li key={index} className="text-gray-700">{receta}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 text-green-600">
+                      <Moon className="w-6 h-6" />
+                      <h3 className="font-semibold">Recomendaciones Generales</h3>
+                    </div>
+                    <p>IMC: {recommendations.imc}</p>
+                    <p>Horas de sueño: {recommendations.horasSueno}</p>
+                    <div>
+                      <p className="font-medium">Suplementación recomendada:</p>
+                      <ul className="list-disc pl-5">
+                        {recommendations.suplementacion.map((suplemento, index) => (
+                          <li key={index} className="text-gray-700">{suplemento}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Button 
+              onClick={() => setStep(1)}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              Volver a Empezar
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default HealthApp;
